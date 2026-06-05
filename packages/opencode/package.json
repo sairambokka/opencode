@@ -129,6 +129,7 @@
     "decimal.js": "10.5.0",
     "diff": "catalog:",
     "drizzle-orm": "catalog:",
+    "e2b": "2.19.5",
     "effect": "catalog:",
     "fuzzysort": "3.1.0",
     "gitlab-ai-provider": "6.6.0",

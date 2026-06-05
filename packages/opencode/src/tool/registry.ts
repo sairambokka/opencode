@@ -13,6 +13,7 @@ import { WebFetchTool } from "./webfetch"
 import { WriteTool } from "./write"
 import { InvalidTool } from "./invalid"
 import { SkillTool } from "./skill"
+import { E2BTool } from "./e2b"
 import * as Tool from "./tool"
 import { Config } from "@/config/config"
 import { type ToolContext as PluginToolContext, type ToolDefinition } from "@opencode-ai/plugin"
@@ -53,6 +54,7 @@ import { Reference } from "@/reference/reference"
 import { BackgroundJob } from "@/background/job"
 import { SessionStatus } from "@/session/status"
 import { RuntimeFlags } from "@/effect/runtime-flags"
+import { Sandbox } from "../sandbox/sandbox"
 
 const log = Log.create({ service: "tool.registry" })
 
@@ -133,6 +135,7 @@ export const layer: Layer.Layer<
     const greptool = yield* GrepTool
     const patchtool = yield* ApplyPatchTool
     const skilltool = yield* SkillTool
+    const e2btool = yield* E2BTool
     const agent = yield* Agent.Service
 
     const state = yield* InstanceState.make<State>(
@@ -237,6 +240,7 @@ export const layer: Layer.Layer<
           question: Tool.init(question),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
+          e2b: Tool.init(e2btool),
         })
 
         return {
@@ -260,6 +264,7 @@ export const layer: Layer.Layer<
             tool.patch,
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),
+            tool.e2b,
           ],
           task: tool.task,
           read: tool.read,
@@ -364,7 +369,7 @@ export const layer: Layer.Layer<
 
     return Service.of({ ids, all, named, tools })
   }),
-)
+).pipe(Layer.provide(Sandbox.defaultLayer))
 
 export const defaultLayer = Layer.suspend(() =>
   layer

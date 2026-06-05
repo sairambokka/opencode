@@ -12,6 +12,8 @@ import PROMPT_EXPLORE from "./prompt/explore.txt"
 import PROMPT_SCOUT from "./prompt/scout.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
+import PROMPT_CTF from "./prompt/ctf.txt"
+import PROMPT_CTF_RECON from "./prompt/ctf-recon.txt"
 import { Permission } from "@/permission"
 import { mergeDeep, pipe, sortBy, values } from "remeda"
 import { Global } from "@opencode-ai/core/global"
@@ -176,6 +178,32 @@ export const layer = Layer.effect(
             mode: "subagent",
             native: true,
           },
+          ctf: {
+            name: "ctf",
+            description: "CTF solver. Methodical recon → enumeration → exploitation → flag capture against a remote Kali sandbox via the e2b tool.",
+            prompt: PROMPT_CTF,
+            options: {},
+            mode: "primary",
+            native: true,
+            temperature: 0.4,
+            permission: Permission.merge(
+              defaults,
+              Permission.fromConfig({
+                "*": "allow",
+                // Local execution disabled — e2b tool is the sole exec surface.
+                shell: "deny",
+                bash: "deny",
+                edit: "deny",
+                write: "deny",
+                patch: "deny",
+                repo_clone: "deny",
+                repo_overview: "deny",
+                // CTF-specific tools fully allowed.
+                e2b: "allow",
+              }),
+              user,
+            ),
+          },
           explore: {
             name: "explore",
             permission: Permission.merge(
@@ -198,6 +226,28 @@ export const layer = Layer.effect(
             options: {},
             mode: "subagent",
             native: true,
+          },
+          "ctf-recon": {
+            name: "ctf-recon",
+            description: "Reconnaissance specialist for CTF challenges. Runs full recon phase autonomously and returns a structured report. Does not exploit, does not submit flags.",
+            prompt: PROMPT_CTF_RECON,
+            options: {},
+            mode: "subagent",
+            native: true,
+            permission: Permission.merge(
+              defaults,
+              Permission.fromConfig({
+                "*": "deny",
+                e2b: "allow",
+                read: "allow",
+                grep: "allow",
+                glob: "allow",
+                webfetch: "allow",
+                websearch: "allow",
+                todowrite: "allow",
+              }),
+              user,
+            ),
           },
           ...(flags.experimentalScout
             ? {

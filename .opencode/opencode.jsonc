@@ -1,10 +1,41 @@
 {
   "$schema": "https://opencode.ai/config.json",
+
+  // Default to CTF mode whenever someone launches this fork.
+  "default_agent": "ctf",
+
+  // Use OpenCode Zen (signed in via `opencode auth login`).
+  // Swap to a paid Zen model (e.g. opencode/claude-sonnet-4-6 or opencode/gpt-5.4) for harder CTFs.
+  "model": "opencode/deepseek-v4-flash-free",
+
+  // Yolo permissions for the e2b tool: the blocklist module enforces scope safety.
+  "permission": {
+    "e2b": "allow"
+  },
+
   "provider": {},
-  "permission": {},
   "mcp": {},
   "tools": {
     "github-triage": false,
     "github-pr-search": false,
   },
+
+  "agent": {
+    "ctf": {
+      "model": "opencode/deepseek-v4-flash-free",
+      "temperature": 0.4
+    },
+    "ctf-recon": {
+      "model": "opencode/qwen3.6-plus-free"
+    }
+  },
+
+  // Bind keys to expand collapsed tool/thinking blocks.
+  // Default opencode hides tool output. Bind <leader>t (default leader is space) to toggle.
+  "tui": {
+    "keybinds": {
+      "tool_details": "<leader>t",
+      "display_thinking": "<leader>i"
+    }
+  }
 }

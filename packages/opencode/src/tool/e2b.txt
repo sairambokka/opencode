@@ -1,0 +1,67 @@
+Executes commands and manages files inside a persistent Kali Linux sandbox via the e2b cloud API.
+
+This is the primary — and often ONLY — action surface for offensive CTF operations. Use it for
+network reconnaissance, exploitation, post-exploitation, file inspection, and scripting. The
+sandbox persists for the lifetime of the session and is isolated from the host machine.
+
+Actions
+-------
+
+exec         Run a shell command synchronously and wait for the result (default timeout 120 s).
+             Use for most operations: nmap, curl, python scripts, compiled exploit code, etc.
+             Pass tail_only=true to receive only the last ~200 lines of very verbose output.
+
+bg_exec      Start a long-running command in the background and return immediately with a pid.
+             Use for: gobuster, ffuf, long nmap sweeps, netcat listeners, pwncat-cs, etc.
+             Returns a pid — save it. The process keeps running while you do other work.
+
+bg_wait      Poll a background process by pid.
+             Returns buffered stdout/stderr so far plus a stillRunning flag.
+             Call repeatedly (or once with a generous max_wait_ms) to harvest results.
+
+read         Read a file from the sandbox filesystem (up to max_bytes, default 200 KB).
+             Flags embedded in the file content are auto-detected and surfaced in metadata.
+
+write        Write content to a path in the sandbox filesystem.
+             Use to upload scripts, payloads, wordlists, or config files before running them.
+
+reset        Kill the current sandbox and clear all state.
+             Use when the environment is corrupted or you need a completely fresh Kali instance.
+             The next exec call will transparently create a new sandbox.
+
+Required field
+--------------
+Always include `description` for exec and bg_exec — a one-line human summary shown in the TUI
+while the command runs (e.g., "nmap SYN scan on 10.10.10.50", "gobuster /api endpoint brute-force").
+
+Constraints
+-----------
+- One tool call per turn for exec (it blocks until completion).
+- Use bg_exec + bg_wait for anything expected to exceed ~30 s.
+- Default timeout is 120 000 ms; pass timeout_ms to extend (max 600 000 ms).
+- Output larger than the session limit is automatically truncated; use tail_only or bg_wait
+  incremental polling for verbose tools.
+- The blocklist is enforced server-side. RFC 1918 / loopback addresses and .gov/.mil TLDs are
+  blocked by default. CTF lab IPs must be in the CTF_ALLOWLIST env var to pass.
+  Do NOT attempt to bypass the blocklist — just ask the user to add the target to CTF_ALLOWLIST.
+
+Examples
+--------
+
+# 1. Quick nmap SYN scan
+{ "action": "exec", "command": "nmap -sS -T4 --open -p 1-10000 10.10.10.50", "description": "nmap SYN scan ports 1-10000 on 10.10.10.50", "timeout_ms": 300000 }
+
+# 2. Gobuster vhost brute-force in the background
+{ "action": "bg_exec", "command": "gobuster vhost -u http://10.10.10.50 -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt", "description": "gobuster vhost scan on 10.10.10.50" }
+# ... later ...
+{ "action": "bg_wait", "pid": 100001, "max_wait_ms": 60000 }
+
+# 3. Read a captured file
+{ "action": "read", "path": "/tmp/loot/flag.txt" }
+
+# 4. Write a Python exploit then run it
+{ "action": "write", "path": "/tmp/exploit.py", "content": "print('exploit')" }
+{ "action": "exec", "command": "python3 /tmp/exploit.py", "description": "run exploit.py against target" }
+
+# 5. Reset after environment corruption
+{ "action": "reset" }

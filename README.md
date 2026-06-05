@@ -43,6 +43,46 @@
 
 ---
 
+## CTF Solver Harness (fork)
+
+This is a CTF-focused fork of [OpenCode](https://github.com/sst/opencode). The default agent runs offensive-security workflows against a remote Kali Linux sandbox via [E2B](https://e2b.dev).
+
+### Quick start
+
+```bash
+bun install
+cp .env.example .env  # then fill in E2B_API_KEY
+opencode auth login    # pick "opencode" → OpenCode Zen (free + paid models, no extra keys)
+bun dev /path/to/your-ctf-workspace
+```
+
+Models route through **OpenCode Zen** by default. The shipped config uses `opencode/deepseek-v4-flash-free` (primary) and `opencode/qwen3.6-plus-free` (recon subagent) — both free tier. Swap to `opencode/claude-sonnet-4-6` or `opencode/gpt-5.4` in `.opencode/opencode.jsonc` for harder CTFs.
+
+### What's different from upstream
+
+- **Default agent**: `ctf` — methodical recon → enumeration → exploitation → flag capture.
+- **New tool**: `e2b` — runs commands inside a Kali sandbox (nmap, sqlmap, nikto, gobuster, etc.). Sole execution surface for the model.
+- **Disabled for the CTF agent**: local `shell`, `edit`, `write`, `apply_patch`, `repo_clone`. Kept: `read`, `glob`, `grep`, `webfetch`, `websearch`, `task`, `todo`, `skill`.
+- **Blocklist**: RFC1918, `.gov`, `.mil`, loopback denied unless explicitly allowlisted via `CTF_ALLOWLIST`.
+- **Flag detection**: passive regex scans every tool result for `flag{...}`, `HTB{...}`, `picoCTF{...}` etc.; matches surface in tool metadata and the agent reports them to you.
+
+### Slash commands (when in `ctf` agent)
+
+- `/target <url-or-ip>` — start a CTF run.
+- `/recon <target>` — spawn the recon subagent.
+- `/exploit <hypotheses>` — enter exploitation phase.
+- `/reset` — destroy + recreate the Kali sandbox.
+
+### Configuration
+
+The fork ships `.opencode/opencode.jsonc` with sensible CTF defaults. Override locally via your own user config or by editing the file.
+
+### Origin
+
+Upstream: https://github.com/sst/opencode. We track upstream's `main` and rebase periodically. The CTF code lives under `packages/opencode/src/sandbox/` and `packages/opencode/src/tool/e2b.ts`.
+
+---
+
 ### Installation
 
 ```bash
